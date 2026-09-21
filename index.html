@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SPYBEAR</title>
+<meta name="description" content="he is watching the building across the street. move to look.">
+<meta property="og:title" content="SPYBEAR">
+<meta property="og:description" content="the bear is on a stakeout. he has been for years.">
+<meta property="og:image" content="og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+:root{--note:#f6e27a;--ink:#1a1a1a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;color:#fff;font-family:'Special Elite','Courier New',monospace;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+
+/* ===== the street (pans under the binoculars) ===== */
+#street{position:fixed;inset:0;overflow:hidden;background:#000;cursor:crosshair}
+#pic{position:absolute;left:0;top:0;width:100%;height:100%;background:#000 center/cover no-repeat;transform:scale(1.65);transform-origin:50% 50%;will-change:transform;filter:contrast(1.05) saturate(.9)}
+#pic:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px)}
+/* binocular mask */
+#mask{position:fixed;inset:0;pointer-events:none;z-index:3;background:
+  radial-gradient(circle at 36% 50%,transparent 0 var(--r),#000 calc(var(--r) + 2px)),
+  radial-gradient(circle at 64% 50%,transparent 0 var(--r),#000 calc(var(--r) + 2px));
+  background-blend-mode:multiply;--r:min(31vw,44vh);
+  -webkit-mask:radial-gradient(circle at 36% 50%,transparent 0 var(--r),#000 calc(var(--r) + 2px)),radial-gradient(circle at 64% 50%,transparent 0 var(--r),#000 calc(var(--r) + 2px));-webkit-mask-composite:source-in;mask-composite:intersect}
+#lens{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(circle at 36% 50%,transparent 55%,rgba(0,0,0,.55) 100%),radial-gradient(circle at 64% 50%,transparent 55%,rgba(0,0,0,.55) 100%);animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:translate(0,0)}50%{transform:translate(3px,-4px)}}
+#dirt{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.35;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.08) 0 2px,transparent 3px),radial-gradient(circle at 62% 71%,rgba(255,255,255,.06) 0 3px,transparent 4px),radial-gradient(circle at 70% 35%,rgba(255,255,255,.05) 0 1px,transparent 2px)}
+#cross{position:fixed;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:4}
+#cross:before,#cross:after{content:"";position:absolute;background:rgba(255,255,255,.35)}
+#cross:before{left:-14px;top:0;width:28px;height:1px}#cross:after{left:0;top:-14px;width:1px;height:28px}
+
+/* ===== hud ===== */
+#hud{position:fixed;left:18px;top:16px;z-index:6;font-size:13px;letter-spacing:.06em;color:#e8e2c8;text-shadow:0 1px 0 #000,0 0 10px rgba(0,0,0,.9)}
+#hud b{display:block;font-size:20px;letter-spacing:.14em;color:#fff}
+#hud .rec{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff2b2b;box-shadow:0 0 8px #ff2b2b;margin-right:6px;animation:blink 1.2s steps(1) infinite;vertical-align:-1px}
+@keyframes blink{50%{opacity:.15}}
+#clock{position:fixed;right:18px;top:16px;z-index:6;font-size:13px;letter-spacing:.1em;color:#e8e2c8;text-shadow:0 1px 0 #000}
+#note{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:6;max-width:min(680px,92vw);text-align:center;font-size:clamp(15px,2vw,22px);line-height:1.35;color:#fff;text-shadow:0 2px 0 #000,0 0 14px rgba(0,0,0,.9);pointer-events:none;min-height:60px}
+#note small{display:block;font-size:11px;letter-spacing:.24em;color:#ffd166;margin-bottom:4px}
+#note.typing:after{content:"_";animation:blink 1s steps(1) infinite}
+#hint{position:fixed;left:50%;top:60px;transform:translateX(-50%);z-index:6;font-size:12px;letter-spacing:.2em;color:#bbb;text-shadow:0 1px 0 #000;transition:opacity .6s}
+
+/* ===== sticky note (stuck on the binoculars) ===== */
+#sticky{position:fixed;right:22px;bottom:22px;z-index:8;width:236px;background:var(--note);color:var(--ink);padding:14px 14px 12px;transform:rotate(-3deg);box-shadow:4px 8px 18px rgba(0,0,0,.6);font-family:'Permanent Marker','Special Elite',cursive}
+#sticky:before{content:"";position:absolute;left:50%;top:-10px;width:70px;height:20px;margin-left:-35px;background:rgba(255,255,255,.45);transform:rotate(2deg);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+#sticky h2{font-size:26px;line-height:1;letter-spacing:.02em}
+#sticky p{font-size:13px;line-height:1.3;margin-top:4px;font-family:'Special Elite',monospace}
+#sticky .ca{margin-top:8px;font-family:'Special Elite',monospace;font-size:11px;border:1px dashed rgba(0,0,0,.45);padding:5px 6px;display:flex;gap:6px;align-items:center}
+#sticky .ca code{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sticky .ca button{text-decoration:underline;font-size:11px}
+#sticky .btns{display:flex;gap:6px;margin-top:9px}
+#sticky .btns a{flex:1;text-align:center;padding:8px 4px;background:var(--ink);color:#fff;font-size:15px;letter-spacing:.06em;transform:rotate(.5deg)}
+#sticky .btns a.buy{background:#d62828}
+#sticky .pair{margin-top:7px;font-family:'Special Elite',monospace;font-size:11px;color:#333}
+
+#toast{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-20px);background:#000;color:#fff;padding:9px 14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;font-size:12px;border:1px solid #444}
+#toast.on{opacity:1;transform:translateX(-50%)}
+
+@media (max-width:760px){
+  #mask{--r:min(46vw,34vh)}
+  #mask,#lens{background:radial-gradient(circle at 50% 46%,transparent 55%,rgba(0,0,0,.6) 100%)}
+  #mask{-webkit-mask:radial-gradient(circle at 50% 46%,transparent 0 var(--r),#000 calc(var(--r) + 2px));mask:radial-gradient(circle at 50% 46%,transparent 0 var(--r),#000 calc(var(--r) + 2px))}
+  #cross{top:46%}
+  #pic{transform:scale(2.2)}
+  #hud b{font-size:16px}#hud{font-size:11px}
+  #note{bottom:190px;font-size:15px}
+  #sticky{right:12px;bottom:12px;width:calc(100% - 24px);transform:rotate(-1deg)}
+  #sticky h2{font-size:22px}
+  #hint{top:52px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="street"><div id="pic"></div></div>
+<div id="lens"></div><div id="dirt"></div><div id="mask"></div><div id="cross"></div>
+
+<div id="hud"><b>SPYBEAR</b><span class="rec"></span>STAKEOUT &middot; DAY <span id="day">1</span></div>
+<div id="clock">--:--:--</div>
+<div id="hint">MOVE TO LOOK &middot; STOP ON A WINDOW</div>
+<div id="note"><small>&nbsp;</small><span id="line"></span></div>
+
+<div id="sticky">
+  <h2>$<span id="tk">SPYBEAR</span></h2>
+  <p>he's been across the street since 2019. he is not a cop.</p>
+  <div class="ca"><span>CA</span><code id="caTxt">drops on X first</code><button id="caCopy">copy</button></div>
+  <div class="btns"><a id="buy" class="buy" href="#" target="_blank" rel="noopener">BUY</a><a id="chart" href="#" target="_blank" rel="noopener">CHART</a><a id="x" href="#" target="_blank" rel="noopener">X</a></div>
+  <div class="pair">paired with <b id="pair">PLTR</b>. they watch you. he watches them.</div>
+</div>
+<div id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const CFG=Object.assign({NAME:"SPYBEAR",TICKER:"SPYBEAR",CA:"",CHAIN:"solana",PAD:"stonkfun",PAIR:"PLTR",X:"https://x.com/",BUY:"",CHART:""},window.SPY_CFG||{});
+const PADS={pons:c=>`https://ponsfamily.com/launchpad/${c}`,pumpfun:c=>`https://pump.fun/coin/${c}`,stonkfun:c=>`https://stonkfun.xyz/token/${c}`};
+const NET=CFG.CHAIN==='solana'?'solana':'robinhood';
+const BUYURL=CFG.BUY||(CFG.CA?(PADS[CFG.PAD]||PADS.stonkfun)(CFG.CA):'');
+const CHARTURL=CFG.CHART||(CFG.CA?`https://www.geckoterminal.com/${NET}/tokens/${CFG.CA}`:'');
+const $=s=>document.querySelector(s);const A=p=>({}[p]||p);
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200)}
+$('#tk').textContent=CFG.TICKER;$('#pair').textContent=CFG.PAIR;document.title=CFG.NAME;
+$('#caTxt').textContent=CFG.CA||'drops on X first';
+$('#caCopy').addEventListener('click',()=>{if(!CFG.CA){toast('no CA yet — it drops on X first');return}navigator.clipboard?.writeText(CFG.CA).then(()=>toast('CA copied'),()=>toast(CFG.CA))});
+$('#x').href=CFG.X||'#';
+for(const [sel,url,msg] of [['#buy',BUYURL,'not trading yet — CA drops on X first'],['#chart',CHARTURL,'no chart until there is a CA']]){const a=$(sel);if(url)a.href=url;else a.addEventListener('click',e=>{e.preventDefault();toast(msg)})}
+$('#pic').style.backgroundImage=`url("${A('street.jpg')}")`;
+$('#day').textContent=Math.max(1,Math.floor((Date.now()-Date.parse('2019-03-11T00:00:00Z'))/86400000)).toLocaleString('en-US');
+setInterval(()=>{$('#clock').textContent=new Date().toTimeString().slice(0,8)},500);
+
+/* ===== pan: the picture moves under the binoculars ===== */
+const pic=$('#pic');let tx=0,ty=0,cx=0,cy=0;const SCALE=matchMedia('(max-width:760px)').matches?2.2:1.65;
+function setTarget(nx,ny){tx=(0.5-nx)*(SCALE-1)*100;ty=(0.5-ny)*(SCALE-1)*100}
+addEventListener('mousemove',e=>setTarget(e.clientX/innerWidth,e.clientY/innerHeight));
+let t0=null,tp=null;addEventListener('touchstart',e=>{t0=e.touches[0];tp={x:cx,y:cy}},{passive:true});
+addEventListener('touchmove',e=>{if(!t0)return;const t=e.touches[0];tx=Math.max(-(SCALE-1)*50,Math.min((SCALE-1)*50,tp.x+(t.clientX-t0.clientX)/innerWidth*100));ty=Math.max(-(SCALE-1)*50,Math.min((SCALE-1)*50,tp.y+(t.clientY-t0.clientY)/innerHeight*100))},{passive:true});
+(function loop(){cx+=(tx-cx)*.06;cy+=(ty-cy)*.06;pic.style.transform=`translate(${cx}%,${cy}%) scale(${SCALE})`;requestAnimationFrame(loop)})();
+
+/* ===== windows: subjects. coordinates are % of the picture (x,y,w,h) ===== */
+const SUBJECTS=[
+ {x:9.5,y:8,w:10,h:21,tag:"APT 5A",note:"eats cereal standing up. 02:40. every night."},
+ {x:23.5,y:8,w:10,h:21,tag:"APT 5B",note:"irons one shirt for forty minutes. never wears it."},
+ {x:37.5,y:8,w:10,h:21,tag:"APT 5C",note:"opens fridge. closes fridge. opens fridge."},
+ {x:52,y:8,w:10,h:21,tag:"APT 5D",note:"on the phone since tuesday. nobody is on the other end."},
+ {x:66.5,y:8,w:10,h:21,tag:"APT 5E",note:"waters a dead plant. we have notes on this."},
+ {x:80.5,y:8,w:10,h:21,tag:"APT 5F",note:"curtains closed since march. do not like this one."},
+ {x:9.5,y:33,w:10,h:21,tag:"APT 4A",note:"lights off. he's home."},
+ {x:23.5,y:33,w:10,h:21,tag:"APT 4B",note:"moved in 2019. boxes still packed."},
+ {x:37.5,y:33,w:10,h:21,tag:"APT 4C",note:"asleep. tv on. six hours. we timed it."},
+ {x:52,y:33,w:10,h:21,tag:"APT 4D",note:"nothing. a suspicious amount of nothing."},
+ {x:66.5,y:33,w:10,h:21,tag:"APT 4E",note:"he is watching us. we are watching him. this is fine."},
+ {x:80.5,y:33,w:10,h:21,tag:"APT 4F",note:"brushes teeth three times a night. hiding something."},
+ {x:9.5,y:57,w:10,h:21,tag:"APT 3A",note:"makes tea. does not drink it. classic."},
+ {x:23.5,y:57,w:10,h:21,tag:"APT 3B",note:"vacant. or is it."},
+ {x:37.5,y:57,w:10,h:21,tag:"APT 3C",note:"lunges in underwear. day four. still bad at it."},
+ {x:52,y:57,w:10,h:21,tag:"APT 3D",note:"curtain moves when we look. it knows."},
+ {x:66.5,y:57,w:10,h:21,tag:"APT 3E",note:"the cat. the only one who has noticed us."},
+ {x:80.5,y:57,w:10,h:21,tag:"APT 3F",note:"nobody. never anybody. rent is paid."},
+ {x:60,y:78,w:20,h:16,tag:"THE VAN",note:"not ours. we asked."},
+ {x:48,y:48,w:4,h:45,tag:"LAMP",note:"flickers at 03:12. we log it."}
+];
+const noteEl=$('#note'),lineEl=$('#line'),smallEl=noteEl.querySelector('small');let cur=null,typer=null;
+function underCross(){ // where is the viewport centre on the picture (in %)
+  const r=pic.getBoundingClientRect();const cxp=(innerWidth/2-r.left)/r.width*100;const cyp=(innerHeight*(matchMedia('(max-width:760px)').matches?.46:.5)-r.top)/r.height*100;
+  return SUBJECTS.find(s=>cxp>=s.x&&cxp<=s.x+s.w&&cyp>=s.y&&cyp<=s.y+s.h)||null}
+function type(txt){clearInterval(typer);lineEl.textContent='';noteEl.classList.add('typing');let i=0;typer=setInterval(()=>{lineEl.textContent=txt.slice(0,++i);if(i>=txt.length){clearInterval(typer);noteEl.classList.remove('typing')}},22)}
+setInterval(()=>{const s=underCross();if(s===cur)return;cur=s;$('#hint').style.opacity=s?0:1;
+  if(!s){smallEl.innerHTML='&nbsp;';clearInterval(typer);lineEl.textContent='';noteEl.classList.remove('typing');return}
+  smallEl.textContent=s.tag;type(s.note)},120);
+</script>
+</body>
+</html>
